@@ -12,7 +12,7 @@ There are several ways you can help the project out:
 
 ### Contributing Code
 
-A lot of **captain-coex** functionality came from pull requests sent by the developer community. Here is how you can contribute too:
+A lot of our projects' functionality comes from pull requests sent by the developer community. Here is how you can contribute too:
 
 - [x] Fork the repository from the [captain-coex GitHub page](https://github.com/DAVFoundation/captain-coex).
 - [x] Clone a copy to your local machine with `$ git clone git@github.com:YOUR-GITHUB-USER-NAME/captain-coex.git`
