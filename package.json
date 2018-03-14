@@ -1,0 +1,22 @@
+{
+  "name": "captain-coex",
+  "version": "1.0.0",
+  "description": "The Captain that drives Copter Express drones",
+  "homepage": "https://github.com/DAVFoundation/captain-coex#readme",
+  "bugs": {
+    "url": "https://github.com/DAVFoundation/captain-coex/issues"
+  },
+  "license": "MIT",
+  "author": "",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DAVFoundation/captain-coex.git"
+  },
+  "scripts": {
+    "start": "",
+    "test": ""
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
