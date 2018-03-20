@@ -1,0 +1,289 @@
+{
+	"info": {
+		"name": "Coexhub API",
+		"_postman_id": "94731901-6c6f-1fe2-b5d5-6b8914d56ade",
+		"description": "",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Send command",
+			"description": "",
+			"item": [
+				{
+					"name": "Send command to drone",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Token",
+								"value": "6049a4c4ebe54b769b11f6c9f5b57e5e",
+								"description": "Authentication"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "command",
+									"value": "pause",
+									"description": "",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "https://hub.copterexpress.com/api/drones/9/command",
+							"protocol": "https",
+							"host": [
+								"hub",
+								"copterexpress",
+								"com"
+							],
+							"path": [
+								"api",
+								"drones",
+								"9",
+								"command"
+							]
+						},
+						"description": ""
+					},
+					"response": []
+				},
+				{
+					"name": "Send command to drone (run_mission)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Token",
+								"value": "6049a4c4ebe54b769b11f6c9f5b57e5e",
+								"description": "Authentication"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "command",
+									"value": "run_mission",
+									"description": "",
+									"type": "text"
+								},
+								{
+									"key": "params",
+									"value": "{\"type\":\"Delivery\",\"locations\":[{\"lat\":55.7048401,\"lon\":37.7220828,\"release_cargo\":false},{\"lat\":55.70492414980209,\"lon\":37.72201726655891,\"altitude_offset\":5,\"release_cargo\":true}],\"altitude\":32,\"name\":\"Test flight\",\"flight_speed\":5,\"post_report\":true,\"info\":\"It's ok to add some field to params to identify the mission as running mission's params are returned in each drone's state\",\"e.g. id\":\"c72b10d9c84f8850296d10e4de168f3c\"}",
+									"description": "",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "https://hub.copterexpress.com/api/drones/9/command",
+							"protocol": "https",
+							"host": [
+								"hub",
+								"copterexpress",
+								"com"
+							],
+							"path": [
+								"api",
+								"drones",
+								"9",
+								"command"
+							]
+						},
+						"description": ""
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Get available drones",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-Token",
+						"value": "6049a4c4ebe54b769b11f6c9f5b57e5e",
+						"description": "Authentication token"
+					}
+				],
+				"body": {},
+				"url": {
+					"raw": "https://hub.copterexpress.com/api/drones/list",
+					"protocol": "https",
+					"host": [
+						"hub",
+						"copterexpress",
+						"com"
+					],
+					"path": [
+						"api",
+						"drones",
+						"list"
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Get drone state",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-Token",
+						"value": "6049a4c4ebe54b769b11f6c9f5b57e5e",
+						"description": "Authentication"
+					}
+				],
+				"body": {},
+				"url": {
+					"raw": "https://hub.copterexpress.com/api/drones/9/state",
+					"protocol": "https",
+					"host": [
+						"hub",
+						"copterexpress",
+						"com"
+					],
+					"path": [
+						"api",
+						"drones",
+						"9",
+						"state"
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Get drone state history",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-Token",
+						"value": "6049a4c4ebe54b769b11f6c9f5b57e5e",
+						"description": "Authentication"
+					}
+				],
+				"body": {},
+				"url": {
+					"raw": "https://hub.copterexpress.com/api/drones/9/states",
+					"protocol": "https",
+					"host": [
+						"hub",
+						"copterexpress",
+						"com"
+					],
+					"path": [
+						"api",
+						"drones",
+						"9",
+						"states"
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Get drone's server storage",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-Token",
+						"value": "6049a4c4ebe54b769b11f6c9f5b57e5e",
+						"description": "Authentication"
+					}
+				],
+				"body": {},
+				"url": {
+					"raw": "https://hub.copterexpress.com/api/drones/9/storage",
+					"protocol": "https",
+					"host": [
+						"hub",
+						"copterexpress",
+						"com"
+					],
+					"path": [
+						"api",
+						"drones",
+						"9",
+						"storage"
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Get drone's photos list",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-Token",
+						"value": "6049a4c4ebe54b769b11f6c9f5b57e5e",
+						"description": "Authentication"
+					}
+				],
+				"body": {},
+				"url": {
+					"raw": "https://hub.copterexpress.com/api/drones/9/photos",
+					"protocol": "https",
+					"host": [
+						"hub",
+						"copterexpress",
+						"com"
+					],
+					"path": [
+						"api",
+						"drones",
+						"9",
+						"photos"
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Get drone's flight reports list",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-Token",
+						"value": "6049a4c4ebe54b769b11f6c9f5b57e5e",
+						"description": "Authentication"
+					}
+				],
+				"body": {},
+				"url": {
+					"raw": "https://hub.copterexpress.com/api/drones/9/reports",
+					"protocol": "https",
+					"host": [
+						"hub",
+						"copterexpress",
+						"com"
+					],
+					"path": [
+						"api",
+						"drones",
+						"9",
+						"reports"
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		}
+	]
+}
