@@ -14,9 +14,15 @@
     "url": "git+https://github.com/DAVFoundation/captain-coex.git"
   },
   "scripts": {
-    "start": "",
+    "start": "nodemon ./src/index.js",
     "test": ""
   },
-  "dependencies": {},
-  "devDependencies": {}
+  "dependencies": {
+    "axios": "^0.18.0",
+    "dav-js": "file:../dav-js",
+    "geolib": "^2.0.24"
+  },
+  "devDependencies": {
+    "nodemon": "^1.17.2"
+  }
 }
