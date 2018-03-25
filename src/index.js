@@ -48,13 +48,13 @@ async function init_sitl() {
   function onNeed(need) {
     let distToPickup = geolib.getDistance(
       { latitude: state.location.lat, longitude: state.location.lon },
-      { latitude: need.pickup.lat, longitude: need.pickup.lon },
+      { latitude: need.pickup_latitude, longitude: need.pickup_longitude },
       1, 1
     );
 
     let distToDropoff = geolib.getDistance(
-      { latitude: need.pickup.lat, longitude: need.pickup.lon },
-      { latitude: need.dropoff.lat, longitude: need.dropoff.lon },
+      { latitude: need.pickup_latitude, longitude: need.pickup_longitude },
+      { latitude: need.dropoff_latitude, longitude: need.dropoff_longitude },
       1, 1
     );
 
