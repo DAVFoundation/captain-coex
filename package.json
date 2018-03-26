@@ -18,8 +18,8 @@
     "test": ""
   },
   "dependencies": {
+    "@davfoundation/dav-js": "^0.1.0",
     "axios": "^0.18.0",
-    "dav-js": "file:../dav-js",
     "geolib": "^2.0.24"
   },
   "devDependencies": {

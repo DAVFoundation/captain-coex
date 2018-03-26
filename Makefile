@@ -1,4 +1,5 @@
-all:
+link-dav-js:
+	npm link ../dav-js
 
 build:
 	@docker-compose build
