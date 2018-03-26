@@ -1,4 +1,4 @@
-const davJS = require('@davfoundation/dav-js');
+const { davJS } = require('@davfoundation/dav-js');
 const DroneAPI = require('./drone-api');
 const geolib = require('geolib');
 const getElevations = require('./elevation');
