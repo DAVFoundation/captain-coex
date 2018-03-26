@@ -11,16 +11,16 @@ process.env['MISSION_CONTROL_URL'] = 'http://localhost:8888';
 process.env['NOTIFICATION_URL'] = 'https://9991eaca.ngrok.io'; // I used ngrok to point this to localhost:7000, I was having issues making requests to localhost from docker
 
 async function init_sitl() {
-  const droneApi = new DroneAPI();
+  let droneApi = new DroneAPI();
   let drones = await droneApi.listDrones();
   let sitl = drones.find(drone => drone.description.match(/\bSITL\b/));
   let state = await droneApi.getState(sitl.id);
 
   console.log(state);
 
-  const dav = new davJS('12345');
+  let dav = new davJS('12345');
 
-  const droneDelivery = dav.needs().forType('drone_delivery', {
+  let droneDelivery = dav.needs().forType('drone_delivery', {
     longitude: state.location.lon,
     latitude: state.location.lat,
     radius: 10e10,
@@ -60,16 +60,16 @@ async function init_sitl() {
 
     let totalDist = distToPickup + distToDropoff;
 
-    const bid = dav.bid().forNeed(need.id, {
+    let bid = dav.bid().forNeed(need.id, {
       price: `${totalDist / DRONE_PRICE_RATE}`,
       price_type: 'flat',
       price_description: 'Flat fee',
-      time_to_pickup: distToPickup / DRONE_AVG_VELOCITY,
-      time_to_dropoff: distToDropoff / DRONE_AVG_VELOCITY,
+      time_to_pickup: (distToPickup / DRONE_AVG_VELOCITY)+1,
+      time_to_dropoff: (distToDropoff / DRONE_AVG_VELOCITY)+1,
       ttl: 120 // TTL in seconds
     });
     bid.subscribe(
-      onBidAccepted(bid),
+      () => onBidAccepted(bid),
       () => console.log('Bid completed'),
       err => console.log(err)
     );
@@ -77,20 +77,20 @@ async function init_sitl() {
 
   function onBidAccepted(bid) {
     console.log(bid);
-    const contract = dav.contract().forBid(bid.id, {
+    let contract = dav.contract().forBid(bid.id, {
       id: '0x98782738712387623876', // Ethereum Smart Contract
       ttl: 120 // TTL in seconds
     });
     contract.subscribe(
-      onContractUpdated(contract),
+      (contractUpdate) => onContractUpdated(contract,contractUpdate),
       () => console.log('Contract completed'),
       err => console.log(err)
     );
   }
 
-  function onContractUpdated(contract) {
+  function onContractUpdated(contract,contractUpdate) {
     console.log(contract);
-    switch (contract.state) {
+    switch (contractUpdate.state) {
       case 'signed':
         beginMission(contract);
         break;
@@ -101,21 +101,21 @@ async function init_sitl() {
   }
 
   function beginMission(contract) {
-    const mission = dav.mission().begin(contract.id, {
+    let mission = dav.mission().begin(contract.id, {
       id: '0x98782738712387623876', // Etherum Smart Contract
       ttl: 120 // TTL in seconds
     });
     mission.subscribe(
-      onMissionUpdated(mission),
+      (missionUpdate) => onMissionUpdated(mission,missionUpdate),
       () => console.log('Mission completed'),
       err => console.log(err)
     );
   }
 
-  async function onMissionUpdated(mission) {
+  async function onMissionUpdated(mission,missionUpdate) {
     let drone = {/* This is the drone API - not part of DAV-JS SDK */ };
     let [pickupAlt, dropoffAlt] = await getElevations([mission.pickup, mission.dropoff]);
-    switch (mission.state) {
+    switch (missionUpdate.state) {
       case 'started':
         drone.goto(sitl.id,
           mission.pickup.lat, mission.pickup.lng,
