@@ -19,7 +19,7 @@ async function init_sitl() {
   const sitl = drones.find(drone => drone.description.match(/\bSITL\b/));
   let state = await droneApi.getState(sitl.id);
 
-  console.log(state);
+  // console.log(state);
 
   const dav = new davJS('12345');
 
@@ -40,7 +40,7 @@ async function init_sitl() {
       })
     }, 10000); */
 
-  console.log(JSON.stringify(state));
+  // console.log(JSON.stringify(state));
 
   droneDelivery.subscribe(
     need => onNeed(need),
@@ -75,6 +75,7 @@ async function init_sitl() {
       ttl: 120 // TTL in seconds
     };
 
+    console.log(`created bid ${need.id}`);
     const bid = dav.bid().forNeed(need.id, bidInfo);
     bid.subscribe(
       () => onBidAccepted(bid),
@@ -84,7 +85,7 @@ async function init_sitl() {
   }
 
   function onBidAccepted(bid) {
-    console.log(bid);
+    // console.log(bid);
     const contract = dav.contract().forBid(bid.id, {
       id: '0x98782738712387623876', // Ethereum Smart Contract
       ttl: 120 // TTL in seconds
@@ -97,7 +98,7 @@ async function init_sitl() {
   }
 
   function onContractUpdated(contract, contractUpdate) {
-    console.log(contract);
+    // console.log(contract);
     switch (contractUpdate.state) {
       case 'signed':
         beginMission(contract);
