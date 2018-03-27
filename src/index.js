@@ -72,6 +72,8 @@ async function init_sitl() {
       price_description: 'Flat fee',
       time_to_pickup: (distToPickup / DRONE_AVG_VELOCITY) + 1,
       time_to_dropoff: (distToDropoff / DRONE_AVG_VELOCITY) + 1,
+      drone_manufacturer: 'Copter Express',
+      drone_model: 'SITL',
       ttl: 120 // TTL in seconds
     };
 
