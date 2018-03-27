@@ -114,6 +114,17 @@ async function init_sitl() {
       id: '0x98782738712387623876', // Etherum Smart Contract
       ttl: 120 // TTL in seconds
     });
+
+    mission.updateState = null;
+    updateStream = droneApi.stateUpdates(sitl.id, 1000).subscribe(async (state) => {
+      if (mission.updateState) {
+        await mission.update({ state: mission.updateState, lat: state.location.lat, lng: state.location.lng });
+      }
+      if (mission.updateState === 'done') {
+        updateStream.unsubscribe();
+      }
+    });
+
     mission.subscribe(
       (missionUpdate) => onMissionUpdated(mission, missionUpdate),
       () => console.log('Mission completed'),
@@ -123,6 +134,8 @@ async function init_sitl() {
 
   async function onMissionUpdated(mission, missionUpdate) {
     const [pickupAlt, dropoffAlt] = await getElevations([mission.pickup, mission.dropoff]);
+    let updateStream;
+
     switch (missionUpdate.state) {
       case 'started':
         droneApi.goto(sitl.id,
@@ -132,9 +145,7 @@ async function init_sitl() {
           .then((pos) => {
             mission.update({ state: 'atPickup', lat: pos.lat, lng: pos.lng });
           });
-        droneApi.updatesPosition.then(pos => {
-          mission.update({ state: 'movingToPickup', lat: pos.lat, lng: pos.lng });
-        });
+        mission.updateState = 'movingToPickup';
         break;
       case 'packageReady':
         droneApi.goto(sitl.id,
@@ -144,11 +155,10 @@ async function init_sitl() {
           .then((pos) => {
             mission.update({ state: 'atDropoff', lat: pos.lat, lng: pos.lng });
           });
-        droneApi.updatesPosition.then(pos => {
-          mission.update({ state: 'movingToDropoff', lat: pos.lat, lng: pos.lng });
-        });
+        mission.updateState = 'movingToDropoff';
         break;
       case 'done':
+        mission.updateState = 'done';
         droneApi.standBy();
         break;
     }
