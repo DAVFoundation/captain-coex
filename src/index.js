@@ -20,7 +20,12 @@ async function init_sitl() {
 
   // console.log(state);
 
-  const dav = new davJS('12345');
+  const dav = new davJS('0x22d491bde2303f2f43325b2108d26f1eaba1e32b', '0x22d491bde2303f2f43325b2108d26f1eaba1e32b');
+  dav.registerSimple().then((res) => {
+    console.log('done', res);
+  }).catch((err) => {
+    console.log('err', err);
+  });
 
   const droneDelivery = dav.needs().forType('drone_delivery', {
     longitude: state.location.lon,
