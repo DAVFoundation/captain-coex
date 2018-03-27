@@ -4,7 +4,7 @@ const geolib = require('geolib');
 const getElevations = require('./elevation');
 
 const DRONE_AVG_VELOCITY = 10.0; // m/s
-const DRONE_PRICE_RATE = 10 / 1000; // DAV/m
+const DRONE_PRICE_RATE = 1e-14 / 1000; // DAV/m
 const DRONE_CRUISE_ALT = 1000;
 
 const pt1 = { lat: 47.397669, lon: 8.5444809 };
@@ -46,7 +46,13 @@ async function init_sitl() {
     () => console.log('')
   );
 
+  this.needs = [];
   function onNeed(need) {
+    if (this.needs.includes(need.id)) {
+      return;
+    }
+    this.needs.push(need.id);
+
     const distToPickup = geolib.getDistance(
       { latitude: state.location.lat, longitude: state.location.lon },
       // { latitude: need.pickup_latitude, longitude: need.pickup_longitude },
@@ -78,40 +84,23 @@ async function init_sitl() {
     console.log(`created bid ${need.id}`);
     const bid = dav.bid().forNeed(need.id, bidInfo);
     bid.subscribe(
-      () => onBidAccepted(bid),
+      (bidid) => onBidAccepted(bidid),
       () => console.log('Bid completed'),
       err => console.log(err)
     );
   }
 
-  function onBidAccepted(bid) {
-    // console.log(bid);
-    const contract = dav.contract().forBid(bid.id, {
-      id: '0x98782738712387623876', // Ethereum Smart Contract
-      ttl: 120 // TTL in seconds
-    });
-    contract.subscribe(
-      (contractUpdate) => onContractUpdated(contract, contractUpdate),
-      () => console.log('Contract completed'),
-      err => console.log(err)
-    );
-  }
-
-  function onContractUpdated(contract, contractUpdate) {
-    // console.log(contract);
-    switch (contractUpdate.state) {
-      case 'signed':
-        beginMission(contract);
-        break;
-      case 'fullfilled':
-        console.log('We got some money! Hurray!');
-        break;
+  this.bids = [];
+  function onBidAccepted(bidid) {
+    if (this.bids.includes(bidid)) {
+      return;
     }
+    this.bids.push(bidid);
+    beginMission(bidid);
   }
 
-  function beginMission(contract) {
-    const mission = dav.mission().begin(contract.id, {
-      id: '0x98782738712387623876', // Etherum Smart Contract
+  function beginMission(bidid) {
+    const mission = dav.mission().begin(bidid, {
       ttl: 120 // TTL in seconds
     });
 
@@ -165,4 +154,4 @@ async function init_sitl() {
   }
 }
 
-init_sitl();
+init_sitl().catch(e => console.log(e));

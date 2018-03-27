@@ -20,7 +20,10 @@ module.exports =
       return axios.get(`${API_ROOT}/drones/list`, {
         headers: API_HEADERS
       })
-        .then(res => res.data);
+        .then(res =>
+          res.data,
+          e =>
+            console.log(e));
     }
 
     getState(id) {
