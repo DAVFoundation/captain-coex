@@ -44,9 +44,11 @@ async function init_sitl() {
 
   const [pickupAlt, dropoffAlt] = await getElevations([mission.pickup, mission.dropoff]);
 
+  console.log(pickupAlt);
+
   droneApi.goto(sitl.id,
     mission.pickup.lat, mission.pickup.lon,
-    DRONE_CRUISE_ALT - state.location.alt, pickupAlt - state.location.alt
+    DRONE_CRUISE_ALT - state.location.alt, pickupAlt.alt - state.location.alt
     , false)
     .then((pos) => {
       console.log(pos);
