@@ -7,20 +7,20 @@ module.exports = async (locations = []) => {
   /* TODO - query by batches of 512 locations */
   let params = {
     locations: locations.map((location) => {
-      return location.lat + ',' + location.lng;
+      return location.lat + ',' + location.lon;
     }).join('|'),
     key: ELEVATION_API_KEY
   };
   let query = Object.keys(params).map(key => `${key}=${params[key]}`).join('&');
 
   return axios.get(`${ELEVATION_API_URL}?${query}`, { json: true }).then(res => {
-    if (res.status != 'OK') {
+    if (res.statusText != 'OK') {
       throw new Error('Error in request to Google Elevation API. Status:' + res.status + '. Message: ' + res.data.error_message);
     }
-    return body.results.map((elevation_data) => {
+    return res.data.results.map((elevation_data) => {
       return {
-        lat: elevation_data.location.lat, lng: elevation_data.location.lng, alt: elevation_data.elevation
+        lat: elevation_data.location.lat, lon: elevation_data.location.lng, alt: elevation_data.elevation
       };
     });
-  });
+  }).catch(err => console.log(err));
 };

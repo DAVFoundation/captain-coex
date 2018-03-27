@@ -46,7 +46,7 @@ module.exports =
             'type': 'Delivery',
             'locations': [{
               lat: lat,
-              lon: lon,
+              lon: lng,
               altitude_offset: landAlt,
               release_cargo: release
             }],
