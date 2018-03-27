@@ -11,7 +11,6 @@ const pt1 = { lat: 47.397669, lon: 8.5444809 };
 const pt2 = { lat: 47.3982004, lon: 8.5448531 };
 
 process.env['MISSION_CONTROL_URL'] = 'http://localhost:8888';
-process.env['NOTIFICATION_URL'] = 'https://9991eaca.ngrok.io'; // I used ngrok to point this to localhost:7000, I was having issues making requests to localhost from docker
 
 async function init_sitl() {
   const droneApi = new DroneAPI();
@@ -30,15 +29,14 @@ async function init_sitl() {
     ttl: 120 // TTL in seconds
   });
 
-  /*   setInterval(() => {
-      state = await droneApi.getState(sitl.id);
-      droneDelivery.update({
-        longitude: state.location.lon,
-        latitude: state.location.lat,
-        radius: 10000,
-        ttl: 120 // TTL in seconds
-      })
-    }, 10000); */
+  droneApi.stateUpdates(sitl.id, 1000).subscribe(async (state) => {
+    await droneDelivery.update({
+      longitude: state.location.lon,
+      latitude: state.location.lat,
+      radius: 10e10,
+      ttl: 120 // TTL in seconds
+    })
+  });
 
   // console.log(JSON.stringify(state));
 

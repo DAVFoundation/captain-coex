@@ -1,4 +1,6 @@
 const axios = require('axios');
+const Rx = require('rxjs/Rx');
+
 
 /*
 
@@ -26,6 +28,13 @@ module.exports =
         headers: API_HEADERS
       })
         .then(res => res.data.state);
+    }
+
+    stateUpdates(id, interval = 1000) {
+      return Rx.Observable.interval(interval)
+        .mergeMap(() => {
+          return Rx.Observable.fromPromise(this.getState(id));
+        });
     }
 
     goto(id, lat, lng, cruiseAlt, landAlt, release = false) {
