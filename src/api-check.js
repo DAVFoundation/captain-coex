@@ -4,11 +4,11 @@ const getElevations = require('./elevation');
 
 const DRONE_AVG_VELOCITY = 10.0; // m/s
 const DRONE_PRICE_RATE = 10 / 1000; // DAV/m
-let DRONE_CRUISE_ALT = 1000;
+let DRONE_CRUISE_ALT = 200;
 
 const mission = {status: 'idle'};
-mission.pickup = {lat: 47.397669, lon: 8.5444809};
-mission.dropoff = {lat: 47.3982004, lon: 8.5448531};
+mission.pickup = {lat: 47.3982004, lon: 8.5448531};
+mission.dropoff = {lat: 47.397669, lon: 8.5444809};
 
 
 async function init_sitl() {
@@ -44,17 +44,15 @@ async function init_sitl() {
 
   const [pickupAlt, dropoffAlt] = await getElevations([mission.pickup, mission.dropoff]);
 
-  console.log(pickupAlt);
-
   droneApi.goto(sitl.id,
     mission.pickup.lat, mission.pickup.lon,
-    DRONE_CRUISE_ALT - state.location.alt, pickupAlt.alt - state.location.alt
-    , false)
+    DRONE_CRUISE_ALT, false)
     .then((pos) => {
       console.log(pos);
+      console.log("I dey move");
       mission.status = 'movingToPickup';
     }).catch(err => {
-      console.log(err);
+    console.log(err);
   });
 }
 

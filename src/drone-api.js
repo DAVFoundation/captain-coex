@@ -1,5 +1,6 @@
 const axios = require('axios');
 const Rx = require('rxjs/Rx');
+const querystring = require('querystring');
 
 
 /*
@@ -11,7 +12,8 @@ curl -H "X-Token:6049a4c4ebe54b769b11f6c9f5b57e5e" https://hub.copterexpress.com
 const API_ROOT = 'https://hub.copterexpress.com/api';
 const DAV_API_KEY = '6049a4c4ebe54b769b11f6c9f5b57e5e';
 const API_HEADERS = {
-  'X-Token': DAV_API_KEY
+  'X-Token': DAV_API_KEY,
+  'Content-type': 'application/x-www-form-urlencoded'
 };
 
 module.exports =
@@ -21,7 +23,7 @@ module.exports =
         headers: API_HEADERS
       })
         .then(res =>
-          res.data,
+            res.data,
           e =>
             console.log(e));
     }
@@ -40,23 +42,23 @@ module.exports =
         });
     }
 
-    goto(id, lat, lng, cruiseAlt, landAlt, release = false) {
-      return axios.post(`${API_ROOT}/drones/${id}/command`, {
+    goto(id, lat, lng, cruiseAlt, release = false) {
+      return axios.request({
+        url: `${API_ROOT}/drones/${id}/command`,
+        method: 'post',
         headers: API_HEADERS,
-        params: {
+        data: querystring.stringify({
           'command': 'run_mission',
           'params': {
             'type': 'Delivery',
             'locations': [{
               lat: lat,
               lon: lng,
-              altitude_offset: landAlt,
               release_cargo: release
             }],
             'altitude': cruiseAlt
           }
-        }
-      })
-        .then(res => res.data);
+        })
+      }).then(res => res.data);
     }
   };
