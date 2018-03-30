@@ -1,6 +1,6 @@
 const axios = require('axios');
 const Rx = require('rxjs/Rx');
-const querystring = require('querystring');
+const qs = require('qs');
 
 
 /*
@@ -43,22 +43,26 @@ module.exports =
     }
 
     goto(id, lat, lng, cruiseAlt, release = false) {
+      const params = qs.stringify({
+        'command': 'run_mission',
+        'params': {
+          'type': 'Delivery',
+          'locations': [{
+            lat: lat,
+            lon: lng,
+            release_cargo: release
+          }],
+          'altitude': cruiseAlt
+        }
+      });
       return axios.request({
         url: `${API_ROOT}/drones/${id}/command`,
         method: 'post',
         headers: API_HEADERS,
-        data: querystring.stringify({
-          'command': 'run_mission',
-          'params': {
-            'type': 'Delivery',
-            'locations': [{
-              lat: lat,
-              lon: lng,
-              release_cargo: release
-            }],
-            'altitude': cruiseAlt
-          }
-        })
-      }).then(res => res.data);
+        data: params
+      }).then(res => {
+        console.log(res);
+        res.data
+      });
     }
   };

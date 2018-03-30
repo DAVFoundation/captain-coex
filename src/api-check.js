@@ -49,7 +49,7 @@ async function init_sitl() {
     DRONE_CRUISE_ALT, false)
     .then((pos) => {
       console.log(pos);
-      console.log("I dey move");
+      console.log("I should be moving");
       mission.status = 'movingToPickup';
     }).catch(err => {
     console.log(err);
