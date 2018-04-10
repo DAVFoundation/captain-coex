@@ -1,7 +1,9 @@
-const { davJS } = require('@davfoundation/dav-js');
+const { DavSDK } = require('@davfoundation/dav-js');
 const DroneAPI = require('./drone-api');
 const geolib = require('geolib');
 const getElevations = require('./elevation');
+const drone = require('./drone');
+const mnemonic = require('../mnemonic');
 
 const DRONE_AVG_VELOCITY = 10.0; // m/s
 const DRONE_PRICE_RATE = 1e-14 / 1000; // DAV/m
@@ -12,7 +14,7 @@ const pt2 = { lat: 47.3982004, lon: 8.5448531 };
 
 process.env['MISSION_CONTROL_URL'] = 'http://localhost:8888';
 
-async function init_sitl() {
+async function init_sitl(dav_id) {
   const droneApi = new DroneAPI();
   const drones = await droneApi.listDrones();
   const sitl = drones.find(drone => drone.description.match(/\bSITL\b/));
@@ -20,12 +22,11 @@ async function init_sitl() {
 
   // console.log(state);
 
-  const dav = new davJS('0x22d491bde2303f2f43325b2108d26f1eaba1e32b', '0x22d491bde2303f2f43325b2108d26f1eaba1e32b');
-  dav.registerSimple().then((res) => {
-    console.log('done', res);
-  }).catch((err) => {
-    console.log('err', err);
-  });
+  const dav = new DavSDK(dav_id, dav_id, mnemonic);
+  let isRegistered = await dav.isRegistered();
+  if(isRegistered) {
+    dav.subscribeToMissionContract();
+  }
 
   const droneDelivery = dav.needs().forType('drone_delivery', {
     longitude: state.location.lon,
@@ -159,4 +160,8 @@ async function init_sitl() {
   }
 }
 
-init_sitl().catch(e => console.log(e));
+drone.init().catch(err => console.log(err));
+
+drone.getDrones().forEach((dav_id, index) => {
+  init_sitl(dav_id).catch(e => console.log(e));
+});

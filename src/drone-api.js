@@ -25,7 +25,8 @@ module.exports =
         .then(res =>
             res.data,
           e =>
-            console.log(e));
+            console.log(e))
+        .catch(e => []);
     }
 
     getState(id) {
@@ -42,7 +43,7 @@ module.exports =
         });
     }
 
-    goto(id, lat, lng, cruiseAlt, release = false) {
+    goto(id, lat, lng, cruiseAlt, landAlt, release = false) {
       const params = qs.stringify({
         'command': 'run_mission',
         'params': {
@@ -50,6 +51,7 @@ module.exports =
           'locations': [{
             lat: lat,
             lon: lng,
+            altitude_offset: landAlt,
             release_cargo: release
           }],
           'altitude': cruiseAlt
