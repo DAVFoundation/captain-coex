@@ -21,8 +21,8 @@
     "@davfoundation/dav-js": "^0.1.0",
     "axios": "^0.18.0",
     "geolib": "^2.0.24",
-    "rxjs": "^5.5.8",
-    "qs": "^6.5.1"
+    "qs": "^6.5.1",
+    "rxjs": "^5.5.8"
   },
   "devDependencies": {
     "nodemon": "^1.17.2"
