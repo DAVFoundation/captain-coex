@@ -1,31 +1,30 @@
 const {
-    updateVehicleStatus,
-    getVehicle:apiGetVehicle,
-    addNewVehicle:apiAddNewVehicle,
-    updateVehicle:apiUpdateVehicle
-  }  = require('./missioncontrol/vehicles');
-const { 
-    getMission, 
-    updateMission,
-    createMissionUpdate 
-  } = require('./missioncontrol/missions');
+  getVehicle:apiGetVehicle,
+  addNewVehicle:apiAddNewVehicle,
+  updateVehicle:apiUpdateVehicle
+}  = require('./missioncontrol/vehicles');
+const { DavSDK, API } = require('@davfoundation/dav-js');
 const Rx = require('rxjs/Rx');
 const DroneApi = require('./drone-api');
 const geolib = require('geolib');
-const { getElevations } = require('./elevation');
+const getElevations = require('./elevation');
+const mnemonic = require('../mnemonic');
 
 const DRONE_AVG_VELOCITY = 10.0; // m/s
 const DRONE_PRICE_RATE = 1e-14 / 1000; // DAV/m
 const DRONE_CRUISE_ALT = 20;
 
-const DRONE_ID_MAP = { // make sure thet eth addres is in lower case
-  9: {
-    address: '0x1df62f291b2e969fb0849d99d9ce41e2f137006e'
-  }
-};
+const DRONE_ID_MAP = require('./drone-id-map');
   
+const pt1 = { lat: 47.397669, lon: 8.5444809 };
+const pt2 = { lat: 47.3982004, lon: 8.5448531 };
+
 class CoExDrone {
   constructor() {
+    // for(let i in DRONE_ID_MAP) {
+
+    // }
+    // let droneIds = Object.values(DRONE_ID_MAP).map((drone) => drone.address);
     this.droneApi = new DroneApi();
     this.dronesByCoexId = {};
     this.dronesByDavID = {};
@@ -41,16 +40,50 @@ class CoExDrone {
     });
   }
 
-  getDrones() {
-    return Object.values(DRONE_ID_MAP).map((drone) => drone.address);
-  }
-
   async dispose() {
     this.droneUpdates.unsubscribe();
   }
 
+  async initDroneSdk(drone) {
+    drone.sdk = new DavSDK(drone.davId, drone.davId, mnemonic);
+    drone.needs = [];
+    drone.bids = [];
+    let isRegistered = await drone.sdk.isRegistered();
+    if(isRegistered) {
+      let missionContract = drone.sdk.mission().contract();
+      missionContract.subscribe(
+        mission => this.onContractCreated(drone, mission),
+        err => console.log(err),
+        () => console.log('')
+      );
+    }
+    const droneState = await this.droneApi.getState(drone.id);
+    const droneDelivery = drone.sdk.needs().forType('drone_delivery', {
+      longitude: droneState.location.lon,
+      latitude: droneState.location.lat,
+      radius: 10e10,
+      ttl: 120 // TTL in seconds
+    });
+  
+    this.droneApi.stateUpdates(drone.id, 1000).subscribe(async (droneState) => {
+      await droneDelivery.update({
+        longitude: droneState.location.lon,
+        latitude: droneState.location.lat,
+        radius: 10e10,
+        ttl: 120 // TTL in seconds
+      })
+    });
+
+    droneDelivery.subscribe(
+      need => this.onNeed(drone, need),
+      err => console.log(err),
+      () => console.log('')
+    );
+  }
+
   async addDrone(drone) {
     if (!this.dronesByCoexId[drone.id]) {
+      this.initDroneSdk(drone);
       this.dronesByCoexId[drone.id] = drone;
       this.dronesByDavID[drone.davId] = drone;
     }
@@ -59,7 +92,7 @@ class CoExDrone {
   async beginMission(vehicleId, missionId) {
     const missionUpdates = Rx.Observable.timer(0, 1000)
       .mergeMap(async () => {
-        let mission = await getMission(missionId);
+        let mission = await API.missions.getMission(missionId);
         let vehicle = await apiGetVehicle(mission.vehicle_id);
         const drone = this.dronesByDavID[vehicleId];
         const droneState = await this.droneApi.getState(drone.id);
@@ -110,21 +143,26 @@ class CoExDrone {
   }
 
   async onInProgress(mission, vehicle, droneState) {
-    await updateMission(mission.mission_id, {
+    await API.missions.updateMission(mission.mission_id, {
       status: 'in_mission',
-      vehicle_start_longitude: droneState.location.lon,
-      vehicle_start_latitude: droneState.location.lat
+      longitude: droneState.location.lon,
+      latitude: droneState.location.lat
     });
 
     await this.onInMission(mission, vehicle, droneState);
   }
 
   async onInMission(mission, vehicle, droneState) {
-    await updateVehiclePosition(
-      vehicle,
-      droneState.location.lon,
-      droneState.location.lat
-    );
+    vehicle.coords = {
+      long: droneState.location.lon,
+      lat: droneState.location.lat
+    };
+    await apiUpdateVehicle(vehicle);
+    // let elevations = await getElevations([
+    //   { lat: mission.pickup_latitude, long: mission.pickup_longitude },
+    //   { lat: mission.dropoff_latitude, long: mission.dropoff_longitude },
+    //   { lat: droneState.location.lat, long: droneState.location.lon }
+    // ]);
     const [
       { elevation: pickupAlt },
       { elevation: dropoffAlt },
@@ -151,21 +189,24 @@ class CoExDrone {
         await this.updateStatus(mission, 'takeoff_start', 'takeoff_start');
         break;
       case 'takeoff_start':
-        if (droneState.status === 'Active') {
-          await this.updateStatus(
-            mission,
-            'travelling_pickup',
-            'travelling_pickup'
-          );
-        }
+        // if (droneState.status === 'Active') {
+        //   await this.updateStatus(
+        //     mission,
+        //     'travelling_pickup',
+        //     'travelling_pickup'
+        //   );
+        // }
+        setTimeout(async () => {
+          await this.updateStatus(mission, 'travelling_pickup', 'travelling_pickup');
+        }, 3000);
         break;
       case 'travelling_pickup':
-        if (droneState.status === 'Standby') {
-          await this.updateStatus(mission, 'landing_pickup', 'landing_pickup');
-        }
-        // setTimeout(async () => {
+        // if (droneState.status === 'Standby') {
         //   await this.updateStatus(mission, 'landing_pickup', 'landing_pickup');
-        // }, 3000);
+        // }
+        setTimeout(async () => {
+          await this.updateStatus(mission, 'landing_pickup', 'landing_pickup');
+        }, 3000);
         break;
       case 'landing_pickup':
         setTimeout(async () => {
@@ -204,11 +245,11 @@ class CoExDrone {
         break;
       case 'travelling_dropoff':
         if (droneState.status === 'Standby') {
-          await this.updateStatus(mission, 'landing_pickup', 'landing_pickup');
+          await this.updateStatus(mission, 'landing_dropoff', 'landing_dropoff');
         }
-        // setTimeout(async () => {
-        //   await this.updateStatus( mission, 'landing_dropoff', 'landing_dropoff' );
-        // }, 3000);
+        setTimeout(async () => {
+          await this.updateStatus( mission, 'landing_dropoff', 'landing_dropoff' );
+        }, 3000);
         break;
       case 'landing_dropoff':
         setTimeout(async () => {
@@ -225,7 +266,7 @@ class CoExDrone {
         }, 3000);
         break;
       case 'available':
-        await updateMission(mission.mission_id, {
+        await API.missions.updateMission(mission.mission_id, {
           status: 'completed'
         });
         break;
@@ -236,11 +277,11 @@ class CoExDrone {
   }
 
   async updateStatus(mission, missionStatus, vehicleStatus) {
-    await updateMission(mission.mission_id, {
-      [missionStatus + '_at']: Date.now()
+    await API.missions.updateMission(mission.mission_id, {
+      mission_status: missionStatus,
+      vehicle_status: vehicleStatus,
+      // mission_status: { [missionStatus + '_at']: Date.now() }
     });
-    await createMissionUpdate(mission.mission_id, missionStatus);
-    await updateVehicleStatus(mission.vehicle_id, vehicleStatus);
   }
 
   async updateVehicles() {
@@ -321,6 +362,64 @@ class CoExDrone {
     };
 
     return bidInfo;
+  }
+
+  async onNeed(drone, need) {
+    if (drone.needs.includes(need.id)) {
+      return;
+    }
+    drone.needs.push(need.id);
+
+    const state = await this.droneApi.getState(drone.id);
+
+    const distToPickup = geolib.getDistance(
+      { latitude: state.location.lat, longitude: state.location.lon },
+      // { latitude: need.pickup_latitude, longitude: need.pickup_longitude },
+      { latitude: pt1.lat, longitude: pt1.lon },
+      1, 1
+    );
+
+    const distToDropoff = geolib.getDistance(
+      // { latitude: need.pickup_latitude, longitude: need.pickup_longitude },
+      { latitude: pt1.lat, longitude: pt1.lon },
+      // { latitude: need.dropoff_latitude, longitude: need.dropoff_longitude },
+      { latitude: pt2.lat, longitude: pt2.lon },
+      1, 1
+    );
+
+    const totalDist = distToPickup + distToDropoff;
+
+    const bidInfo = {
+      price: `${totalDist / DRONE_PRICE_RATE}`,
+      price_type: 'flat',
+      price_description: 'Flat fee',
+      time_to_pickup: (distToPickup / DRONE_AVG_VELOCITY) + 1,
+      time_to_dropoff: (distToDropoff / DRONE_AVG_VELOCITY) + 1,
+      drone_manufacturer: 'Copter Express',
+      drone_model: 'SITL',
+      ttl: 120 // TTL in seconds
+    };
+
+    console.log(`created bid ${need.id}`);
+    const bid = drone.sdk.bid().forNeed(need.id, bidInfo);
+    bid.subscribe(
+      (bid) => this.onBidAccepted(drone, bid),
+      () => console.log('Bid completed'),
+      err => console.log(err)
+    );
+  }
+
+  onBidAccepted(drone, bid) {
+    if (drone.bids.includes(bid.id)) {
+      return;
+    }
+    drone.bids.push(bid.id);
+    //In case when mission starts when bid accepted
+    // this.beginMission(bid.vehicle_id, mission_id);
+  }
+
+  onContractCreated(drone, mission) {
+    this.beginMission(mission.vehicle_id, mission.mission_id);
   }
 }
 
