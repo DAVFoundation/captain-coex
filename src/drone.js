@@ -3,7 +3,7 @@ const {
   addNewVehicle:apiAddNewVehicle,
   updateVehicle:apiUpdateVehicle
 }  = require('./missioncontrol/vehicles');
-const { DavSDK, API } = require('@davfoundation/dav-js');
+const { DavSDK, API } = require('dav-js');
 const Rx = require('rxjs/Rx');
 const DroneApi = require('./drone-api');
 const geolib = require('geolib');
