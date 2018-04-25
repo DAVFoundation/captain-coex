@@ -1,4 +1,4 @@
-FROM node:9.3.0-alpine
+FROM node:9
 
 RUN npm install -g nodemon
 
