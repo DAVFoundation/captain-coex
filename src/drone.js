@@ -1,5 +1,4 @@
 const {
-  getVehicle:apiGetVehicle,
   addNewVehicle:apiAddNewVehicle,
   updateVehicle:apiUpdateVehicle
 }  = require('./missioncontrol/vehicles');
@@ -81,19 +80,11 @@ class CoExDrone {
     );
   }
 
-  async addDrone(drone) {
-    if (!this.dronesByCoexId[drone.id]) {
-      this.initDroneSdk(drone);
-      this.dronesByCoexId[drone.id] = drone;
-      this.dronesByDavID[drone.davId] = drone;
-    }
-  }
-
   async beginMission(vehicleId, missionId) {
     const missionUpdates = Rx.Observable.timer(0, 1000)
       .mergeMap(async () => {
         let mission = await API.missions.getMission(missionId);
-        let vehicle = await apiGetVehicle(mission.vehicle_id);
+        let vehicle = await API.captains.getCaptain(mission.vehicle_id);
         const drone = this.dronesByDavID[vehicleId];
         const droneState = await this.droneApi.getState(drone.id);
         droneState.id = drone.id;
@@ -143,10 +134,13 @@ class CoExDrone {
   }
 
   async onInProgress(mission, vehicle, droneState) {
+
+    await this.updateStatus(mission, 'vehicle_signed', 'contract_received');
     await API.missions.updateMission(mission.mission_id, {
       status: 'in_mission',
       longitude: droneState.location.lon,
-      latitude: droneState.location.lat
+      latitude: droneState.location.lat,
+      captain_id: vehicle.id
     });
 
     await this.onInMission(mission, vehicle, droneState);
@@ -157,7 +151,7 @@ class CoExDrone {
       long: droneState.location.lon,
       lat: droneState.location.lat
     };
-    await apiUpdateVehicle(vehicle);
+    API.captains.updateCaptain(vehicle);
     // let elevations = await getElevations([
     //   { lat: mission.pickup_latitude, long: mission.pickup_longitude },
     //   { lat: mission.dropoff_latitude, long: mission.dropoff_longitude },
@@ -178,15 +172,17 @@ class CoExDrone {
 
     switch (vehicle.status) {
       case 'contract_received':
-        await this.droneApi.goto(
-          droneState.id,
-          parseFloat(mission.pickup_latitude),
-          parseFloat(mission.pickup_longitude),
-          DRONE_CRUISE_ALT/*  - takeoffAlt */,
-          pickupAlt - takeoffAlt,
-          true
-        );
-        await this.updateStatus(mission, 'takeoff_start', 'takeoff_start');
+        // await this.droneApi.goto(
+        //   droneState.id,
+        //   parseFloat(mission.pickup_latitude),
+        //   parseFloat(mission.pickup_longitude),
+        //   DRONE_CRUISE_ALT/*  - takeoffAlt */,
+        //   pickupAlt - takeoffAlt,
+        //   true
+        // );
+        setTimeout(async () => {
+          await this.updateStatus(mission, 'takeoff_start', 'takeoff_start');
+        }, 3000);
         break;
       case 'takeoff_start':
         // if (droneState.status === 'Active') {
@@ -267,7 +263,8 @@ class CoExDrone {
         break;
       case 'available':
         await API.missions.updateMission(mission.mission_id, {
-          status: 'completed'
+          status: 'completed',
+          captain_id: vehicle.id
         });
         break;
       default:
@@ -280,6 +277,7 @@ class CoExDrone {
     await API.missions.updateMission(mission.mission_id, {
       mission_status: missionStatus,
       vehicle_status: vehicleStatus,
+      captain_id: mission.vehicle_id
       // mission_status: { [missionStatus + '_at']: Date.now() }
     });
   }
@@ -300,19 +298,12 @@ class CoExDrone {
 
   async updateVehicle(drone) {
     drone.davId = DRONE_ID_MAP[drone.id].address;
-    this.addDrone(drone);
     const state = await this.droneApi.getState(drone.id);
-    console.log(`${JSON.stringify(state.location)} ${state.status}`);
-
-    let vehicle = await apiGetVehicle(drone.davId);
-    if (vehicle) {
-      vehicle.coords = {
-        long: state.location.lon,
-        lat: state.location.lat
-      };
-      apiUpdateVehicle(vehicle);
-    } else {
-      let vehicle = {
+    if (!this.dronesByCoexId[drone.id]) {
+      this.initDroneSdk(drone);
+      this.dronesByCoexId[drone.id] = drone;
+      this.dronesByDavID[drone.davId] = drone;
+      drone.sdk.initCaptain({
         id: drone.davId,
         model: 'CopterExpress-d1',
         icon: `https://lorempixel.com/100/100/abstract/?${drone.davId}`,
@@ -323,8 +314,16 @@ class CoExDrone {
         missions_completed: 0,
         missions_completed_7_days: 0,
         status: 'available'
-      };
-      apiAddNewVehicle(vehicle);
+      });
+    } else {
+      let captain = await API.captains.getCaptain(drone.davId);
+      if (captain) {
+        captain.coords = {
+          long: state.location.lon,
+          lat: state.location.lat
+        };
+        API.captains.updateCaptain(captain);
+      }
     }
   }
 
