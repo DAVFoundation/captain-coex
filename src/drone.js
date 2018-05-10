@@ -84,7 +84,7 @@ class CoExDrone {
     const missionUpdates = Rx.Observable.timer(0, 1000)
       .mergeMap(async () => {
         let mission = await API.missions.getMission(missionId);
-        let vehicle = await API.captains.getCaptain(mission.vehicle_id);
+        let vehicle = await API.captains.getCaptain(mission.captain_id);
         const drone = this.dronesByDavID[vehicleId];
         const droneState = await this.droneApi.getState(drone.id);
         droneState.id = drone.id;
@@ -115,6 +115,15 @@ class CoExDrone {
                   state.vehicle,
                   state.droneState
                 );
+                break;
+              case 'confirmed':
+                setTimeout(async () => {
+                  await this.updateStatus(state.mission, 'completed', 'available');
+                }, 3000);
+                await API.missions.updateMission(state.mission.mission_id, {
+                  status: 'completed',
+                  captain_id: state.vehicle.id
+                });
                 break;
               case 'completed':
                 missionUpdates.unsubscribe();
@@ -213,14 +222,14 @@ class CoExDrone {
         console.log(`drone waiting for pickup`);
         break;
       case 'takeoff_pickup':
-        await this.droneApi.goto(
-          droneState.id,
-          parseFloat(mission.dropoff_latitude),
-          parseFloat(mission.dropoff_longitude),
-          DRONE_CRUISE_ALT /* - takeoffAlt */,
-          dropoffAlt - takeoffAlt,
-          true
-        );
+        // await this.droneApi.goto(
+        //   droneState.id,
+        //   parseFloat(mission.dropoff_latitude),
+        //   parseFloat(mission.dropoff_longitude),
+        //   DRONE_CRUISE_ALT /* - takeoffAlt */,
+        //   dropoffAlt - takeoffAlt,
+        //   true
+        // );
         await this.updateStatus(
           mission,
           'takeoff_pickup_wait',
@@ -228,21 +237,21 @@ class CoExDrone {
         );
         break;
       case 'takeoff_pickup_wait':
-        if (droneState.status === 'Active') {
-          await this.updateStatus(
-            mission,
-            'travelling_dropoff',
-            'travelling_dropoff'
-          );
-        }
-        // setTimeout(async () => {
-        //   await this.updateStatus( mission, 'travelling_dropoff', 'travelling_dropoff' );
-        // }, 3000);
+        // if (droneState.status === 'Active') {
+        //   await this.updateStatus(
+        //     mission,
+        //     'travelling_dropoff',
+        //     'travelling_dropoff'
+        //   );
+        // }
+        setTimeout(async () => {
+          await this.updateStatus( mission, 'travelling_dropoff', 'travelling_dropoff' );
+        }, 3000);
         break;
       case 'travelling_dropoff':
-        if (droneState.status === 'Standby') {
-          await this.updateStatus(mission, 'landing_dropoff', 'landing_dropoff');
-        }
+        // if (droneState.status === 'Standby') {
+        //   await this.updateStatus(mission, 'landing_dropoff', 'landing_dropoff');
+        // }
         setTimeout(async () => {
           await this.updateStatus( mission, 'landing_dropoff', 'landing_dropoff' );
         }, 3000);
@@ -258,8 +267,11 @@ class CoExDrone {
         break;
       case 'waiting_dropoff':
         setTimeout(async () => {
-          await this.updateStatus(mission, 'completed', 'available');
+          await this.updateStatus( mission, 'ready', 'ready' );
         }, 3000);
+        break;
+      case 'ready':
+        
         break;
       case 'available':
         await API.missions.updateMission(mission.mission_id, {
@@ -277,7 +289,7 @@ class CoExDrone {
     await API.missions.updateMission(mission.mission_id, {
       mission_status: missionStatus,
       vehicle_status: vehicleStatus,
-      captain_id: mission.vehicle_id
+      captain_id: mission.captain_id
       // mission_status: { [missionStatus + '_at']: Date.now() }
     });
   }
@@ -414,11 +426,11 @@ class CoExDrone {
     }
     drone.bids.push(bid.id);
     //In case when mission starts when bid accepted
-    // this.beginMission(bid.vehicle_id, mission_id);
+    // this.beginMission(bid.captain_id, mission_id);
   }
 
   onContractCreated(drone, mission) {
-    this.beginMission(mission.vehicle_id, mission.mission_id);
+    this.beginMission(mission.captain_id, mission.mission_id);
   }
 }
 
